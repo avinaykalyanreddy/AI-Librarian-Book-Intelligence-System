@@ -22,8 +22,17 @@ def chunk_text(text, size=200, overlap=50): # long text break down into chunks
 
     return chunks
 
-def store_book_embeddings(book): # embedding into chromedb
-    chunks = chunk_text(book.description)
+def store_book_embeddings(book):
+    full_text = f"""
+    Title: {book.title}
+    Author: {book.author}
+    Rating: {book.rating}
+
+    Description:
+    {book.description}
+    """
+
+    chunks = chunk_text(full_text)
 
     for i, chunk in enumerate(chunks):
         embedding = model.encode(chunk).tolist()
@@ -32,7 +41,13 @@ def store_book_embeddings(book): # embedding into chromedb
             documents=[chunk],
             embeddings=[embedding],
             ids=[f"{book.id}_{i}"],
-            metadatas=[{"book_id": str(book.id)}]  # 🔥 IMPORTANT
+            metadatas=[
+                {
+                    "book_id": str(book.id),
+                    "title": book.title,
+                    "author": book.author
+                }
+            ]
         )
 
 

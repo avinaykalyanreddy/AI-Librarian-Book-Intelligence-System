@@ -58,33 +58,59 @@ def upload_book(request): # uploading new book to db using www.goodreads.com url
     })
 
 @api_view(['POST'])
-def ask_question(request): # user asks question on book it generates it response
+def ask_question(request):
     question = request.data.get("question")
     book_id = request.data.get("book_id")
 
     if not question or not book_id:
         return Response({"error": "question and book_id required"}, status=400)
 
-    # 🔍 retrieve only that book
-    results = retrieve_chunks(question, book_id)
+    try:
+        #1. Get book from DB (IMPORTANT)
+        book = Book.objects.get(id=book_id)
 
-    documents = results.get("documents", [[]])[0]
+        #2. Retrieve relevant chunks
+        results = retrieve_chunks(question, book_id)
 
-    if not documents:
-        return Response({"answer": "No relevant data found"}, status=200)
+        documents = results.get("documents", [[]])[0]
 
-    # 🧠 combine context
-    context = " ".join(documents)
+        #If no chunks found
+        if not documents:
+            # fallback using DB only
+            context = f"""
+            Title: {book.title}
+            Author: {book.author}
+            Rating: {book.rating}
+            Description: {book.description}
+            """
+        else:
+            #  Combine DB + RAG context
+            context = f"""
+            Title: {book.title}
+            Author: {book.author}
+            Rating: {book.rating}
+            """ + " ".join(documents)
 
-    # 🤖 generate answer
-    answer = generate_answer(question, context)
+        # Generate answer
+        answer = generate_answer(question, context)
 
-    return Response({
-        "question": question,
-        "answer": answer,
-        "sources": documents
-    })
+        return Response({
+            "question": question,
+            "answer": answer,
+            "sources": documents if documents else [],
+            "book": {
+                "title": book.title,
+                "author": book.author,
+                "rating": book.rating
+            }
+        })
 
+    except Book.DoesNotExist:
+        return Response({"error": "Book not found"}, status=404)
+
+    except Exception as e:
+        print("Error:", str(e))
+        return Response({"error": "Something went wrong"}, status=500)
 @api_view(['GET'])
 def recommend_books(request, book_id):
     try:
@@ -95,7 +121,7 @@ def recommend_books(request, book_id):
 
         embeddings = results.get("embeddings", [])
 
-        # ✅ convert safely
+        #convert safely
         embeddings = np.array(embeddings)
 
         if embeddings.size == 0:

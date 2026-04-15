@@ -27,6 +27,16 @@ An AI-powered full-stack web application that allows users to upload book links,
 
 * Chat-style interface for asking questions
 * Modern responsive UI with Tailwind CSS
+--- 
+## 🖥️ Demo Video
+
+<p align="center">
+  <a href="https://drive.google.com/file/d/1zeyrFGCXAOJ-g8mxlHKkc9KckjAs6iWG/view?usp=drivesdk">
+    <img src="https://img.shields.io/badge/Watch-Demo%20Video-blue?style=for-the-badge&logo=google-drive" />
+  </a>
+</p> 
+
+
 ---
 ## 📸 Screenshots
 
